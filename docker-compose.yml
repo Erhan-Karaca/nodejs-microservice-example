@@ -1,0 +1,48 @@
+version: "3.4"
+
+services:
+  s_rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    networks:
+      - micro_net
+      - int_get
+  s_sms_service:
+    build:
+      context: .
+      dockerfile: ./sms-service/Dockerfile
+    environment:
+      AMQP_HOST: "amqp://localhost:5672"
+      AMQP_USER: "admin"
+      AMQP_PASS: "admin"
+      RMQ_EXCHANGE_TYPE: "direct"
+      RMQ_EXCHANGE_NOTIFICATION: "notification"
+      RMQ_QUEUE_SMS: "send_sms"
+    networks:
+      - int_get
+  s_mail_service:
+    build:
+      context: .
+      dockerfile: ./mail-service/Dockerfile
+    environment:
+      AMQP_HOST: "amqp://localhost:5672"
+      AMQP_USER: "admin"
+      AMQP_PASS: "admin"
+      RMQ_EXCHANGE_TYPE: "direct"
+      RMQ_EXCHANGE_NOTIFICATION: "notification"
+      RMQ_QUEUE_MAIL: "send_mail"
+    networks:
+      - int_get
+
+networks:
+  int_get:
+    internal: true
+  micro_net:
+    driver: bridge
